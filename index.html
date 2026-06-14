@@ -13,6 +13,7 @@
       <!-- Display: a small secondary line for the running expression sits above the
            primary result line. -->
       <div class="display" role="group" aria-label="Display">
+        <div class="display__memory" id="memoryIndicator" aria-label="Memory holds a value" hidden>M</div>
         <div class="display__expression" id="expression" aria-hidden="true"></div>
         <div class="display__result" id="result" role="status" aria-live="polite" aria-atomic="true">0</div>
       </div>
@@ -57,6 +58,16 @@
         <button type="button" class="key key--digit key--zero" data-digit="0" aria-label="0">0</button>
         <button type="button" class="key key--digit" data-action="decimal" aria-label="Decimal point">.</button>
         <button type="button" class="key key--eq" data-action="equals" aria-label="Equals">=</button>
+      </div>
+
+      <!-- Calculation history. Hidden until the first result is recorded;
+           each entry can be tapped to reuse its result. -->
+      <div class="history" id="history" hidden>
+        <div class="history__header">
+          <span class="history__title">History</span>
+          <button type="button" class="history__clear" id="clearHistory">Clear</button>
+        </div>
+        <ul class="history__list" id="historyList"></ul>
       </div>
 
     </section>

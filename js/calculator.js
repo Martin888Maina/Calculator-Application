@@ -20,6 +20,15 @@
 
   var resultEl = document.getElementById('result');
   var expressionEl = document.getElementById('expression');
+  var memoryIndicatorEl = document.getElementById('memoryIndicator');
+  var historyEl = document.getElementById('history');
+  var historyListEl = document.getElementById('historyList');
+  var clearHistoryEl = document.getElementById('clearHistory');
+
+  // localStorage keys for the values that persist across sessions.
+  var STORAGE_MEMORY = 'calculator.memory';
+  var STORAGE_HISTORY = 'calculator.history';
+  var HISTORY_LIMIT = 50;
 
   // current:   operand shown on the result line, kept as a string so digit
   //            entry is simple.
@@ -35,6 +44,11 @@
   var operator = null;
   var overwrite = true;
   var errored = false;
+
+  // memory:  single stored value behind the M-keys.
+  // history: most-recent-first list of { expr, result } records.
+  var memory = 0;
+  var history = [];
 
   // --- Entry -------------------------------------------------------
 
@@ -141,15 +155,17 @@
       return;
     }
 
-    expressionEl.textContent =
+    var exprText =
       formatDisplay(formatNumber(left)) + ' ' + OPERATORS[operator].symbol + ' ' +
-      formatDisplay(formatNumber(right)) + ' =';
+      formatDisplay(formatNumber(right));
+    expressionEl.textContent = exprText + ' =';
 
     current = formatNumber(result);
     previous = null;
     operator = null;
     overwrite = true;
     render();
+    addHistory(exprText, current);
   }
 
   function applyPercent() {
@@ -246,6 +262,159 @@
     resultEl.textContent = formatDisplay(current);
   }
 
+  // --- Memory ------------------------------------------------------
+
+  function memoryStore() {
+    memory = roundValue(parseFloat(current) || 0);
+    overwrite = true;
+    saveMemory();
+    updateMemoryIndicator();
+  }
+
+  function memoryAdd() {
+    memory = roundValue(memory + (parseFloat(current) || 0));
+    overwrite = true;
+    saveMemory();
+    updateMemoryIndicator();
+  }
+
+  function memorySubtract() {
+    memory = roundValue(memory - (parseFloat(current) || 0));
+    overwrite = true;
+    saveMemory();
+    updateMemoryIndicator();
+  }
+
+  function memoryRecall() {
+    current = formatNumber(memory);
+    overwrite = true;
+    render();
+  }
+
+  function memoryClear() {
+    memory = 0;
+    saveMemory();
+    updateMemoryIndicator();
+  }
+
+  // The badge is only meaningful when something is stored.
+  function updateMemoryIndicator() {
+    if (memory !== 0) {
+      memoryIndicatorEl.removeAttribute('hidden');
+    } else {
+      memoryIndicatorEl.setAttribute('hidden', '');
+    }
+  }
+
+  function roundValue(value) {
+    return parseFloat(formatNumber(value));
+  }
+
+  // --- History -----------------------------------------------------
+
+  function addHistory(expr, rawResult) {
+    history.unshift({ expr: expr, result: rawResult });
+    if (history.length > HISTORY_LIMIT) {
+      history.length = HISTORY_LIMIT;
+    }
+    saveHistory();
+    renderHistory();
+  }
+
+  function renderHistory() {
+    historyListEl.textContent = '';
+
+    if (history.length === 0) {
+      historyEl.setAttribute('hidden', '');
+      return;
+    }
+    historyEl.removeAttribute('hidden');
+
+    for (var i = 0; i < history.length; i++) {
+      var entry = history[i];
+
+      var button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'history__entry';
+      button.dataset.result = entry.result;
+
+      var expr = document.createElement('span');
+      expr.className = 'history__expr';
+      expr.textContent = entry.expr + ' =';
+
+      var value = document.createElement('span');
+      value.className = 'history__value';
+      value.textContent = formatDisplay(entry.result);
+
+      button.appendChild(expr);
+      button.appendChild(value);
+
+      var item = document.createElement('li');
+      item.className = 'history__item';
+      item.appendChild(button);
+      historyListEl.appendChild(item);
+    }
+  }
+
+  function clearHistory() {
+    history = [];
+    saveHistory();
+    renderHistory();
+  }
+
+  // Load a stored result back onto the display for reuse in a new
+  // calculation.
+  function recallResult(rawResult) {
+    current = rawResult;
+    previous = null;
+    operator = null;
+    overwrite = true;
+    errored = false;
+    expressionEl.textContent = '';
+    render();
+  }
+
+  // --- Persistence -------------------------------------------------
+  // localStorage can be unavailable (private browsing, blocked storage), so
+  // every access is guarded and silently falls back to in-memory state.
+
+  function loadState() {
+    try {
+      var storedMemory = window.localStorage.getItem(STORAGE_MEMORY);
+      if (storedMemory !== null) {
+        memory = parseFloat(storedMemory) || 0;
+      }
+      var storedHistory = window.localStorage.getItem(STORAGE_HISTORY);
+      if (storedHistory !== null) {
+        var parsed = JSON.parse(storedHistory);
+        if (Array.isArray(parsed)) {
+          history = parsed;
+        }
+      }
+    } catch (error) {
+      memory = 0;
+      history = [];
+    }
+    updateMemoryIndicator();
+    renderHistory();
+  }
+
+  function saveMemory() {
+    try {
+      window.localStorage.setItem(STORAGE_MEMORY, String(memory));
+    } catch (error) {
+      /* Storage unavailable; keep the value in memory only. */
+    }
+  }
+
+  function saveHistory() {
+    try {
+      window.localStorage.setItem(STORAGE_HISTORY, JSON.stringify(history));
+    } catch (error) {
+      /* Storage unavailable; keep the list in memory only. */
+    }
+  }
+
   // --- Events ------------------------------------------------------
 
   var ACTIONS = {
@@ -257,17 +426,16 @@
     equals: evaluate,
     sqrt: function () { applyUnary('sqrt'); },
     square: function () { applyUnary('square'); },
-    reciprocal: function () { applyUnary('reciprocal'); }
+    reciprocal: function () { applyUnary('reciprocal'); },
+    'memory-clear': memoryClear,
+    'memory-recall': memoryRecall,
+    'memory-add': memoryAdd,
+    'memory-subtract': memorySubtract,
+    'memory-store': memoryStore
   };
 
-  // One delegated listener for the whole keypad. The pressed button's data
-  // role decides which handler runs.
-  document.querySelector('.keypad').addEventListener('click', function (event) {
-    var button = event.target.closest('button');
-    if (!button) {
-      return;
-    }
-
+  // Dispatch a single button press based on its data role.
+  function handlePress(button) {
     // Clear a previous error before processing anything except an explicit
     // all-clear, which already resets everything.
     if (errored && button.dataset.action !== 'clear') {
@@ -283,7 +451,32 @@
     } else if (button.dataset.action && ACTIONS[button.dataset.action]) {
       ACTIONS[button.dataset.action]();
     }
+  }
+
+  // One delegated listener per control group. The memory bar and keypad both
+  // route through the same dispatch.
+  function delegate(container) {
+    container.addEventListener('click', function (event) {
+      var button = event.target.closest('button');
+      if (button && container.contains(button)) {
+        handlePress(button);
+      }
+    });
+  }
+
+  delegate(document.querySelector('.memory-bar'));
+  delegate(document.querySelector('.keypad'));
+
+  // Tapping a history entry reuses its result; the clear button empties the
+  // list.
+  historyListEl.addEventListener('click', function (event) {
+    var entry = event.target.closest('.history__entry');
+    if (entry) {
+      recallResult(entry.dataset.result);
+    }
   });
+
+  clearHistoryEl.addEventListener('click', clearHistory);
 
   // --- Keyboard ----------------------------------------------------
 
@@ -336,5 +529,8 @@
     button.click();
   });
 
+  // --- Init --------------------------------------------------------
+
+  loadState();
   render();
 })();

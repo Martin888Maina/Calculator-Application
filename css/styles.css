@@ -80,6 +80,7 @@ body {
 /* --- Display ------------------------------------------------------ */
 
 .display {
+  position: relative;
   background: var(--display-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-key);
@@ -92,6 +93,24 @@ body {
   gap: 6px;
   /* Long results scroll sideways rather than breaking the layout. */
   overflow: hidden;
+}
+
+/* Small badge in the corner shown only while memory holds a value. */
+.display__memory {
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+
+.display__memory[hidden] {
+  display: none;
 }
 
 .display__expression {
@@ -221,6 +240,103 @@ body {
 .key--zero {
   grid-column: span 2;
   aspect-ratio: auto;
+}
+
+/* --- History ------------------------------------------------------ */
+
+.history {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history[hidden] {
+  display: none;
+}
+
+.history__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.history__title {
+  color: var(--muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.history__clear {
+  font-family: inherit;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+
+.history__clear:hover {
+  color: var(--text);
+  background: var(--key);
+}
+
+.history__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+/* Slim, monochrome scrollbar to match the rest of the interface. */
+.history__list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.history__list::-webkit-scrollbar-thumb {
+  background: var(--key-hover);
+  border-radius: 3px;
+}
+
+.history__entry {
+  width: 100%;
+  font-family: inherit;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.history__entry:hover {
+  background: var(--key);
+}
+
+.history__entry:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.history__expr {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.history__value {
+  color: var(--text);
+  font-size: 1.05rem;
 }
 
 /* --- Small screens ------------------------------------------------ */
