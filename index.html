@@ -72,9 +72,36 @@
         <button type="button" class="key key--eq" data-action="equals" aria-label="Equals">=</button>
       </div>
 
-      <!-- Scientific keypad. Built out in later phases. -->
-      <div class="keypad-panel" data-mode-panel="scientific" hidden>
-        <p class="mode-placeholder">Scientific keypad</p>
+      <!-- Scientific keypad. Builds a full expression that is evaluated with
+           operator precedence and parentheses. Function keys and constants
+           are added in the next phase. -->
+      <div class="keypad" data-mode-panel="scientific" hidden>
+        <button type="button" class="key key--fn" data-action="clear" aria-label="All clear">AC</button>
+        <button type="button" class="key key--fn" data-action="delete" aria-label="Delete">&#9003;</button>
+        <button type="button" class="key key--fn" data-input="(" aria-label="Open parenthesis">(</button>
+        <button type="button" class="key key--fn" data-input=")" aria-label="Close parenthesis">)</button>
+
+        <button type="button" class="key key--digit" data-input="7" aria-label="7">7</button>
+        <button type="button" class="key key--digit" data-input="8" aria-label="8">8</button>
+        <button type="button" class="key key--digit" data-input="9" aria-label="9">9</button>
+        <button type="button" class="key key--op" data-input="&#247;" aria-label="Divide">&#247;</button>
+
+        <button type="button" class="key key--digit" data-input="4" aria-label="4">4</button>
+        <button type="button" class="key key--digit" data-input="5" aria-label="5">5</button>
+        <button type="button" class="key key--digit" data-input="6" aria-label="6">6</button>
+        <button type="button" class="key key--op" data-input="&#215;" aria-label="Multiply">&#215;</button>
+
+        <button type="button" class="key key--digit" data-input="1" aria-label="1">1</button>
+        <button type="button" class="key key--digit" data-input="2" aria-label="2">2</button>
+        <button type="button" class="key key--digit" data-input="3" aria-label="3">3</button>
+        <button type="button" class="key key--op" data-input="&#8722;" aria-label="Subtract">&#8722;</button>
+
+        <button type="button" class="key key--fn" data-action="ans" aria-label="Last answer">ANS</button>
+        <button type="button" class="key key--digit" data-input="0" aria-label="0">0</button>
+        <button type="button" class="key key--digit" data-input="." aria-label="Decimal point">.</button>
+        <button type="button" class="key key--op" data-input="+" aria-label="Add">+</button>
+
+        <button type="button" class="key key--eq key--wide" data-action="equals" aria-label="Equals">=</button>
       </div>
 
       <!-- Programmer keypad. Built out in a later phase. -->
@@ -97,7 +124,9 @@
     </section>
   </main>
 
-  <!-- Application logic. Mode-specific modules are loaded in later phases. -->
+  <!-- Application logic. The parser powers scientific-mode expressions and
+       loads before the main script that uses it. -->
+  <script src="js/parser.js"></script>
   <script src="js/calculator.js"></script>
 </body>
 </html>

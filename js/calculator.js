@@ -56,6 +56,17 @@
   var history = [];
   var mode = 'standard';
 
+  // Scientific mode builds a full expression string instead of executing
+  // immediately.
+  // sciInput:    the expression shown on the display, using glyphs.
+  // ans:         the last scientific result, recalled by the ANS key.
+  // sciDone:     true right after equals, so the next entry starts fresh.
+  // sciErrored:  true after a malformed expression; cleared on next input.
+  var sciInput = '';
+  var ans = 0;
+  var sciDone = false;
+  var sciErrored = false;
+
   // --- Entry -------------------------------------------------------
 
   function inputDigit(digit) {
@@ -268,6 +279,94 @@
     resultEl.textContent = formatDisplay(current);
   }
 
+  // --- Scientific mode ---------------------------------------------
+
+  function renderSci() {
+    resultEl.textContent = sciInput === '' ? '0' : sciInput;
+  }
+
+  function isOperatorGlyph(text) {
+    return text === '+' || text === '−' || text === '×' || text === '÷';
+  }
+
+  // Append a literal (digit, operator, parenthesis, or decimal point) to the
+  // scientific expression. After a result, an operator continues from that
+  // result while anything else begins a new expression.
+  function sciAppend(text) {
+    if (sciDone) {
+      if (isOperatorGlyph(text)) {
+        sciInput = formatNumber(ans);
+      } else {
+        sciInput = '';
+        expressionEl.textContent = '';
+      }
+      sciDone = false;
+    }
+    sciInput += text;
+    renderSci();
+  }
+
+  // Insert the previous answer. A negative value is wrapped in parentheses so
+  // it composes correctly inside the surrounding expression.
+  function sciAnswer() {
+    if (sciDone) {
+      sciInput = '';
+      expressionEl.textContent = '';
+      sciDone = false;
+    }
+    var token = formatNumber(ans);
+    sciInput += ans < 0 ? '(' + token + ')' : token;
+    renderSci();
+  }
+
+  function sciDelete() {
+    if (sciDone) {
+      sciDone = false;
+      expressionEl.textContent = '';
+    }
+    sciInput = sciInput.slice(0, -1);
+    renderSci();
+  }
+
+  function sciClear() {
+    sciInput = '';
+    sciDone = false;
+    sciErrored = false;
+    expressionEl.textContent = '';
+    resultEl.textContent = '0';
+  }
+
+  function sciEvaluate() {
+    if (sciInput === '') {
+      return;
+    }
+
+    var result;
+    try {
+      result = CalculatorParser.evaluate(sciInput);
+    } catch (error) {
+      setSciError(error.message);
+      return;
+    }
+
+    var resultStr = formatNumber(result);
+    expressionEl.textContent = sciInput + ' =';
+    addHistory(sciInput, resultStr);
+
+    ans = result;
+    sciInput = resultStr;
+    sciDone = true;
+    resultEl.textContent = formatDisplay(resultStr);
+  }
+
+  function setSciError(message) {
+    sciInput = '';
+    sciDone = false;
+    sciErrored = true;
+    expressionEl.textContent = '';
+    resultEl.textContent = message;
+  }
+
   // --- Memory ------------------------------------------------------
 
   function memoryStore() {
@@ -369,14 +468,21 @@
   }
 
   // Load a stored result back onto the display for reuse in a new
-  // calculation.
+  // calculation, targeting whichever mode is active.
   function recallResult(rawResult) {
+    expressionEl.textContent = '';
+    if (mode === 'scientific') {
+      sciInput = rawResult;
+      sciDone = false;
+      sciErrored = false;
+      renderSci();
+      return;
+    }
     current = rawResult;
     previous = null;
     operator = null;
     overwrite = true;
     errored = false;
-    expressionEl.textContent = '';
     render();
   }
 
@@ -399,6 +505,17 @@
     var panels = document.querySelectorAll('[data-mode-panel]');
     for (var j = 0; j < panels.length; j++) {
       panels[j].hidden = panels[j].dataset.modePanel !== mode;
+    }
+
+    // Show the display value that belongs to the mode being entered. Each
+    // mode keeps its own working state.
+    expressionEl.textContent = '';
+    if (mode === 'scientific') {
+      renderSci();
+    } else if (mode === 'programmer') {
+      resultEl.textContent = '0';
+    } else {
+      render();
     }
 
     saveMode();
@@ -497,19 +614,48 @@
     }
   }
 
-  // One delegated listener per control group. The memory bar and keypad both
-  // route through the same dispatch.
-  function delegate(container) {
+  // Scientific dispatch: appendable keys carry data-input, control keys carry
+  // data-action.
+  var SCI_ACTIONS = {
+    clear: sciClear,
+    delete: sciDelete,
+    equals: sciEvaluate,
+    ans: sciAnswer
+  };
+
+  function handleSci(button) {
+    // Clear a previous error before processing anything except all-clear.
+    if (sciErrored && button.dataset.action !== 'clear') {
+      sciErrored = false;
+      sciInput = '';
+      expressionEl.textContent = '';
+      renderSci();
+    }
+
+    if (button.dataset.input !== undefined) {
+      sciAppend(button.dataset.input);
+    } else if (button.dataset.action && SCI_ACTIONS[button.dataset.action]) {
+      SCI_ACTIONS[button.dataset.action]();
+    }
+  }
+
+  // One delegated listener per control group, each routing to the dispatch
+  // for its mode.
+  function delegate(container, handler) {
     container.addEventListener('click', function (event) {
       var button = event.target.closest('button');
       if (button && container.contains(button)) {
-        handlePress(button);
+        handler(button);
       }
     });
   }
 
-  delegate(document.querySelector('.memory-bar'));
-  delegate(document.querySelector('.keypad'));
+  var standardPanel = document.querySelector('[data-mode-panel="standard"]');
+  var scientificPanel = document.querySelector('[data-mode-panel="scientific"]');
+
+  delegate(document.querySelector('.memory-bar'), handlePress);
+  delegate(standardPanel, handlePress);
+  delegate(scientificPanel, handleSci);
 
   // Tapping a history entry reuses its result; the clear button empties the
   // list.
@@ -532,24 +678,47 @@
 
   // --- Keyboard ----------------------------------------------------
 
-  // Map a keyboard event to the on-screen button it should activate. Both
-  // "Enter" and "=" trigger equals; "Escape" clears everything.
+  // Map a keyboard event to the standard on-screen button it should activate.
+  // Both "Enter" and "=" trigger equals; "Escape" clears everything.
   function buttonForKey(event) {
     var key = event.key;
     if (key >= '0' && key <= '9') {
-      return document.querySelector('[data-digit="' + key + '"]');
+      return standardPanel.querySelector('[data-digit="' + key + '"]');
     }
     switch (key) {
-      case '.': return document.querySelector('[data-action="decimal"]');
-      case '+': return document.querySelector('[data-operator="add"]');
-      case '-': return document.querySelector('[data-operator="subtract"]');
-      case '*': return document.querySelector('[data-operator="multiply"]');
-      case '/': return document.querySelector('[data-operator="divide"]');
-      case '%': return document.querySelector('[data-action="percent"]');
+      case '.': return standardPanel.querySelector('[data-action="decimal"]');
+      case '+': return standardPanel.querySelector('[data-operator="add"]');
+      case '-': return standardPanel.querySelector('[data-operator="subtract"]');
+      case '*': return standardPanel.querySelector('[data-operator="multiply"]');
+      case '/': return standardPanel.querySelector('[data-operator="divide"]');
+      case '%': return standardPanel.querySelector('[data-action="percent"]');
       case '=':
-      case 'Enter': return document.querySelector('[data-action="equals"]');
-      case 'Backspace': return document.querySelector('[data-action="delete"]');
-      case 'Escape': return document.querySelector('[data-action="clear"]');
+      case 'Enter': return standardPanel.querySelector('[data-action="equals"]');
+      case 'Backspace': return standardPanel.querySelector('[data-action="delete"]');
+      case 'Escape': return standardPanel.querySelector('[data-action="clear"]');
+      default: return null;
+    }
+  }
+
+  // Map a keyboard event to the matching scientific key, including
+  // parentheses and the typographic operator glyphs.
+  function sciButtonForKey(event) {
+    var key = event.key;
+    if (key >= '0' && key <= '9') {
+      return scientificPanel.querySelector('[data-input="' + key + '"]');
+    }
+    switch (key) {
+      case '.': return scientificPanel.querySelector('[data-input="."]');
+      case '+': return scientificPanel.querySelector('[data-input="+"]');
+      case '-': return scientificPanel.querySelector('[data-input="−"]');
+      case '*': return scientificPanel.querySelector('[data-input="×"]');
+      case '/': return scientificPanel.querySelector('[data-input="÷"]');
+      case '(': return scientificPanel.querySelector('[data-input="("]');
+      case ')': return scientificPanel.querySelector('[data-input=")"]');
+      case '=':
+      case 'Enter': return scientificPanel.querySelector('[data-action="equals"]');
+      case 'Backspace': return scientificPanel.querySelector('[data-action="delete"]');
+      case 'Escape': return scientificPanel.querySelector('[data-action="clear"]');
       default: return null;
     }
   }
@@ -569,7 +738,12 @@
       return;
     }
 
-    var button = buttonForKey(event);
+    // Programmer mode has its own input rules, handled in a later phase.
+    if (mode === 'programmer') {
+      return;
+    }
+
+    var button = mode === 'scientific' ? sciButtonForKey(event) : buttonForKey(event);
     if (!button) {
       return;
     }

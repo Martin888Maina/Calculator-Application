@@ -298,6 +298,13 @@ body {
   aspect-ratio: auto;
 }
 
+/* Full-width key, used by the scientific equals button. */
+.key--wide {
+  grid-column: 1 / -1;
+  aspect-ratio: auto;
+  padding: 16px 0;
+}
+
 /* --- History ------------------------------------------------------ */
 
 .history {
