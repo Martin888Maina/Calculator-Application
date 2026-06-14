@@ -1,1 +1,231 @@
-/* Calculator styles. Layout and theme are added in the styling phase. */
+/* ===================================================================
+   Calculator theme
+   A monochrome, black-and-white design. Colours, sizing, and spacing
+   are centralised as custom properties so the whole look can be tuned
+   from one place.
+   =================================================================== */
+
+:root {
+  /* Surfaces, layered from the page background up to the keys. */
+  --bg: #000000;
+  --surface: #0a0a0a;
+  --display-bg: #050505;
+
+  /* Keys. Operators sit on a slightly lighter surface so they read as
+     a distinct group without introducing any colour. */
+  --key: #1c1c1c;
+  --key-hover: #2a2a2a;
+  --key-op: #2a2a2a;
+  --key-op-hover: #383838;
+  --key-eq: #f5f5f5;
+  --key-eq-hover: #ffffff;
+
+  /* Text. The running expression uses a muted grey so the primary
+     result stays dominant. */
+  --text: #ffffff;
+  --muted: #9a9a9a;
+  --text-invert: #000000;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-bright: rgba(255, 255, 255, 0.16);
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+
+  --radius-card: 24px;
+  --radius-key: 16px;
+  --gap: 10px;
+
+  --font: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  /* Crisp glyphs on the large display digits. */
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- Calculator card --------------------------------------------- */
+
+.calculator {
+  width: 100%;
+  max-width: 360px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* --- Display ------------------------------------------------------ */
+
+.display {
+  background: var(--display-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-key);
+  padding: 18px 20px;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 6px;
+  /* Long results scroll sideways rather than breaking the layout. */
+  overflow: hidden;
+}
+
+.display__expression {
+  color: var(--muted);
+  font-size: 0.95rem;
+  min-height: 1.2em;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.display__result {
+  color: var(--text);
+  font-size: clamp(2.2rem, 9vw, 3rem);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* --- Memory bar --------------------------------------------------- */
+
+.memory-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--gap);
+}
+
+/* --- Keypad ------------------------------------------------------- */
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
+}
+
+/* --- Keys --------------------------------------------------------- */
+
+.key {
+  font-family: inherit;
+  color: var(--text);
+  background: var(--key);
+  border: 1px solid transparent;
+  border-radius: var(--radius-key);
+  cursor: pointer;
+  user-select: none;
+  /* Square-ish keys that scale with the card width. */
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  font-weight: 400;
+  transition: background-color 0.12s ease, transform 0.06s ease,
+    filter 0.12s ease;
+}
+
+.key:hover {
+  background: var(--key-hover);
+}
+
+/* A brief brightness lift and a soft scale-down give tactile feedback
+   on press. */
+.key:active {
+  transform: scale(0.95);
+  filter: brightness(1.25);
+}
+
+/* Memory keys are compact, secondary controls. */
+.key--memory {
+  aspect-ratio: auto;
+  padding: 10px 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border-color: var(--border);
+}
+
+.key--memory:hover {
+  color: var(--text);
+  background: var(--key);
+}
+
+/* Function keys (clear, sign, percent, root, square, reciprocal). */
+.key--fn {
+  font-size: 1.15rem;
+  color: var(--text);
+}
+
+/* Operators read as a group via a lighter surface and a thin border. */
+.key--op {
+  background: var(--key-op);
+  border-color: var(--border-bright);
+  font-size: 1.5rem;
+}
+
+.key--op:hover {
+  background: var(--key-op-hover);
+}
+
+/* Equals is the single emphasised key: an inverted, near-white surface
+   that stays within the monochrome palette. */
+.key--eq {
+  background: var(--key-eq);
+  color: var(--text-invert);
+  font-weight: 500;
+}
+
+.key--eq:hover {
+  background: var(--key-eq-hover);
+}
+
+/* The zero key is wider, spanning two grid columns. */
+.key--zero {
+  grid-column: span 2;
+  aspect-ratio: auto;
+}
+
+/* --- Small screens ------------------------------------------------ */
+
+@media (max-width: 380px) {
+  .calculator {
+    padding: 16px;
+  }
+
+  :root {
+    --gap: 8px;
+  }
+
+  .key {
+    font-size: 1.2rem;
+  }
+}
