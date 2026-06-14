@@ -25,10 +25,14 @@
   var historyListEl = document.getElementById('historyList');
   var clearHistoryEl = document.getElementById('clearHistory');
 
+  var modeToggleEl = document.querySelector('.mode-toggle');
+
   // localStorage keys for the values that persist across sessions.
   var STORAGE_MEMORY = 'calculator.memory';
   var STORAGE_HISTORY = 'calculator.history';
+  var STORAGE_MODE = 'calculator.mode';
   var HISTORY_LIMIT = 50;
+  var MODES = ['standard', 'scientific', 'programmer'];
 
   // current:   operand shown on the result line, kept as a string so digit
   //            entry is simple.
@@ -47,8 +51,10 @@
 
   // memory:  single stored value behind the M-keys.
   // history: most-recent-first list of { expr, result } records.
+  // mode:    active keypad ("standard", "scientific", or "programmer").
   var memory = 0;
   var history = [];
+  var mode = 'standard';
 
   // --- Entry -------------------------------------------------------
 
@@ -374,6 +380,30 @@
     render();
   }
 
+  // --- Mode switching ----------------------------------------------
+
+  // Show the panel for the chosen mode, mark its toggle button active, and
+  // remember the choice. Standard mode keeps the existing keypad and logic;
+  // the other panels are filled in by later phases.
+  function setMode(nextMode) {
+    if (MODES.indexOf(nextMode) === -1) {
+      nextMode = 'standard';
+    }
+    mode = nextMode;
+
+    var buttons = modeToggleEl.querySelectorAll('.mode-toggle__btn');
+    for (var i = 0; i < buttons.length; i++) {
+      buttons[i].setAttribute('aria-selected', buttons[i].dataset.mode === mode ? 'true' : 'false');
+    }
+
+    var panels = document.querySelectorAll('[data-mode-panel]');
+    for (var j = 0; j < panels.length; j++) {
+      panels[j].hidden = panels[j].dataset.modePanel !== mode;
+    }
+
+    saveMode();
+  }
+
   // --- Persistence -------------------------------------------------
   // localStorage can be unavailable (private browsing, blocked storage), so
   // every access is guarded and silently falls back to in-memory state.
@@ -391,12 +421,18 @@
           history = parsed;
         }
       }
+      var storedMode = window.localStorage.getItem(STORAGE_MODE);
+      if (MODES.indexOf(storedMode) !== -1) {
+        mode = storedMode;
+      }
     } catch (error) {
       memory = 0;
       history = [];
+      mode = 'standard';
     }
     updateMemoryIndicator();
     renderHistory();
+    setMode(mode);
   }
 
   function saveMemory() {
@@ -412,6 +448,14 @@
       window.localStorage.setItem(STORAGE_HISTORY, JSON.stringify(history));
     } catch (error) {
       /* Storage unavailable; keep the list in memory only. */
+    }
+  }
+
+  function saveMode() {
+    try {
+      window.localStorage.setItem(STORAGE_MODE, mode);
+    } catch (error) {
+      /* Storage unavailable; keep the choice in memory only. */
     }
   }
 
@@ -477,6 +521,14 @@
   });
 
   clearHistoryEl.addEventListener('click', clearHistory);
+
+  // Mode selector.
+  modeToggleEl.addEventListener('click', function (event) {
+    var button = event.target.closest('.mode-toggle__btn');
+    if (button) {
+      setMode(button.dataset.mode);
+    }
+  });
 
   // --- Keyboard ----------------------------------------------------
 

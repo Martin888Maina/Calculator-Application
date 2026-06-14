@@ -10,6 +10,14 @@
   <main>
     <section class="calculator" aria-label="Calculator">
 
+      <!-- Mode selector. Standard is the default; the other two panels are
+           swapped in by the mode-switching logic. -->
+      <div class="mode-toggle" role="tablist" aria-label="Calculator mode">
+        <button type="button" class="mode-toggle__btn" data-mode="standard" role="tab" aria-selected="true">Standard</button>
+        <button type="button" class="mode-toggle__btn" data-mode="scientific" role="tab" aria-selected="false">Scientific</button>
+        <button type="button" class="mode-toggle__btn" data-mode="programmer" role="tab" aria-selected="false">Programmer</button>
+      </div>
+
       <!-- Display: a small secondary line for the running expression sits above the
            primary result line. -->
       <div class="display" role="group" aria-label="Display">
@@ -27,9 +35,13 @@
         <button type="button" class="key key--memory" data-action="memory-store" aria-label="Memory store">MS</button>
       </div>
 
-      <!-- Main keypad. Order: control row, function row, then digits with the
-           operator column on the right. -->
-      <div class="keypad">
+      <!-- Keypad area. Each mode has its own panel; only the active one is
+           shown. -->
+      <div class="keypads">
+
+      <!-- Standard keypad. Order: control row, function row, then digits with
+           the operator column on the right. -->
+      <div class="keypad" data-mode-panel="standard">
         <button type="button" class="key key--fn" data-action="clear" aria-label="All clear">AC</button>
         <button type="button" class="key key--fn" data-action="delete" aria-label="Delete">&#9003;</button>
         <button type="button" class="key key--fn" data-action="negate" aria-label="Toggle sign">&#177;</button>
@@ -58,6 +70,18 @@
         <button type="button" class="key key--digit key--zero" data-digit="0" aria-label="0">0</button>
         <button type="button" class="key key--digit" data-action="decimal" aria-label="Decimal point">.</button>
         <button type="button" class="key key--eq" data-action="equals" aria-label="Equals">=</button>
+      </div>
+
+      <!-- Scientific keypad. Built out in later phases. -->
+      <div class="keypad-panel" data-mode-panel="scientific" hidden>
+        <p class="mode-placeholder">Scientific keypad</p>
+      </div>
+
+      <!-- Programmer keypad. Built out in a later phase. -->
+      <div class="keypad-panel" data-mode-panel="programmer" hidden>
+        <p class="mode-placeholder">Programmer keypad</p>
+      </div>
+
       </div>
 
       <!-- Calculation history. Hidden until the first result is recorded;

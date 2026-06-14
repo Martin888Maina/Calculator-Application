@@ -77,6 +77,62 @@ body {
   gap: 16px;
 }
 
+/* --- Mode toggle -------------------------------------------------- */
+
+.mode-toggle {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  background: var(--display-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.mode-toggle__btn {
+  font-family: inherit;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.mode-toggle__btn:hover {
+  color: var(--text);
+}
+
+/* The active segment is marked by a subtle lighter surface, staying within
+   the monochrome palette. */
+.mode-toggle__btn[aria-selected="true"] {
+  background: var(--key);
+  color: var(--text);
+}
+
+.mode-toggle__btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* --- Keypad panels ------------------------------------------------ */
+
+/* The hidden attribute must win over the keypad's grid display, so the
+   inactive panel is fully removed from the layout. */
+[data-mode-panel][hidden] {
+  display: none;
+}
+
+.mode-placeholder {
+  color: var(--muted);
+  text-align: center;
+  padding: 48px 12px;
+  font-size: 0.9rem;
+}
+
 /* --- Display ------------------------------------------------------ */
 
 .display {
