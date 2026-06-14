@@ -285,5 +285,56 @@
     }
   });
 
+  // --- Keyboard ----------------------------------------------------
+
+  // Map a keyboard event to the on-screen button it should activate. Both
+  // "Enter" and "=" trigger equals; "Escape" clears everything.
+  function buttonForKey(event) {
+    var key = event.key;
+    if (key >= '0' && key <= '9') {
+      return document.querySelector('[data-digit="' + key + '"]');
+    }
+    switch (key) {
+      case '.': return document.querySelector('[data-action="decimal"]');
+      case '+': return document.querySelector('[data-operator="add"]');
+      case '-': return document.querySelector('[data-operator="subtract"]');
+      case '*': return document.querySelector('[data-operator="multiply"]');
+      case '/': return document.querySelector('[data-operator="divide"]');
+      case '%': return document.querySelector('[data-action="percent"]');
+      case '=':
+      case 'Enter': return document.querySelector('[data-action="equals"]');
+      case 'Backspace': return document.querySelector('[data-action="delete"]');
+      case 'Escape': return document.querySelector('[data-action="clear"]');
+      default: return null;
+    }
+  }
+
+  // Briefly mirror a key press on its on-screen button so typing feels
+  // connected to the keypad.
+  function flash(button) {
+    button.classList.add('is-active');
+    window.setTimeout(function () {
+      button.classList.remove('is-active');
+    }, 120);
+  }
+
+  document.addEventListener('keydown', function (event) {
+    // Leave browser and system shortcuts (copy, refresh, and so on) alone.
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+
+    var button = buttonForKey(event);
+    if (!button) {
+      return;
+    }
+
+    // Stop the key's default behaviour (such as Backspace navigating back or
+    // Enter re-activating a focused button) and drive the keypad instead.
+    event.preventDefault();
+    flash(button);
+    button.click();
+  });
+
   render();
 })();

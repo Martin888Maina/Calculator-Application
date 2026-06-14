@@ -157,10 +157,19 @@ body {
 }
 
 /* A brief brightness lift and a soft scale-down give tactile feedback
-   on press. */
-.key:active {
+   on press. The same look is mirrored on keyboard input via .is-active. */
+.key:active,
+.key.is-active {
   transform: scale(0.95);
   filter: brightness(1.25);
+}
+
+/* Visible keyboard focus. The outline sits in the gap between keys on the
+   dark card, so a single white ring reads clearly on every key, including
+   the inverted equals key. */
+.key:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
 }
 
 /* Memory keys are compact, secondary controls. */
