@@ -68,7 +68,7 @@ body {
 
 .calculator {
   width: 100%;
-  max-width: 360px;
+  max-width: 460px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
@@ -236,8 +236,9 @@ body {
   border-radius: var(--radius-key);
   cursor: pointer;
   user-select: none;
-  /* Square-ish keys that scale with the card width. */
-  aspect-ratio: 1 / 1;
+  /* Keys are wider than they are tall so the keypad reads as a balanced,
+     wide block rather than a tall narrow column. */
+  aspect-ratio: 3 / 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -330,7 +331,7 @@ body {
 /* Scientific mode needs more keys, so the card widens and the keypad uses a
    five-column grid with smaller glyphs. */
 .calculator--sci {
-  max-width: 420px;
+  max-width: 560px;
 }
 
 .keypad--sci {
@@ -338,11 +339,11 @@ body {
 }
 
 .keypad--sci .key {
-  font-size: 0.74rem;
+  font-size: 0.9rem;
 }
 
 .keypad--sci .key--op {
-  font-size: 1.1rem;
+  font-size: 1.3rem;
 }
 
 /* Angle and notation toggles: small, quiet, monochrome controls. */
@@ -390,7 +391,7 @@ body {
 /* Like scientific mode, programmer mode uses a wider card and a five-column
    keypad. */
 .calculator--prog {
-  max-width: 420px;
+  max-width: 560px;
 }
 
 .keypad--prog {
@@ -398,7 +399,7 @@ body {
 }
 
 .keypad--prog .key {
-  font-size: 0.82rem;
+  font-size: 0.98rem;
 }
 
 /* Disabled keys (hex letters outside hex mode) are dimmed and inert. */
