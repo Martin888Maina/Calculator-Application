@@ -30,6 +30,7 @@
   var sciControlsEl = document.getElementById('sciControls');
   var angleToggleEl = document.getElementById('angleToggle');
   var sciNotationToggleEl = document.getElementById('sciNotationToggle');
+  var progBasesEl = document.getElementById('progBases');
 
   // localStorage keys for the values that persist across sessions.
   var STORAGE_MEMORY = 'calculator.memory';
@@ -37,8 +38,10 @@
   var STORAGE_MODE = 'calculator.mode';
   var STORAGE_ANGLE = 'calculator.angle';
   var STORAGE_SCINOTATION = 'calculator.sciNotation';
+  var STORAGE_PROGBASE = 'calculator.progBase';
   var HISTORY_LIMIT = 50;
   var MODES = ['standard', 'scientific', 'programmer'];
+  var PROG_BASES = [2, 8, 10, 16];
 
   // current:   operand shown on the result line, kept as a string so digit
   //            entry is simple.
@@ -77,6 +80,19 @@
   // sciNotation: when true, results display in exponential form.
   var angleMode = 'DEG';
   var sciNotation = false;
+
+  // Programmer mode works on integers across four bases with immediate
+  // execution, similar to standard mode but with bitwise operators.
+  // progValue:    digits of the current value in the active base.
+  // progBase:     active base (2, 8, 10, or 16).
+  // progPrevious: stored left operand (decimal), or null.
+  // progOperator: pending bitwise operator name, or null.
+  var progValue = '0';
+  var progBase = 10;
+  var progPrevious = null;
+  var progOperator = null;
+  var progOverwrite = true;
+  var progErrored = false;
 
   // --- Entry -------------------------------------------------------
 
@@ -417,6 +433,154 @@
     sciNotationToggleEl.setAttribute('aria-pressed', sciNotation ? 'true' : 'false');
   }
 
+  // --- Programmer mode ---------------------------------------------
+
+  var OP_LABELS = { and: 'AND', or: 'OR', xor: 'XOR', shl: '<<', shr: '>>' };
+
+  function progDigit(ch) {
+    if (progOverwrite || progValue === '0') {
+      progValue = ch;
+      progOverwrite = false;
+    } else {
+      progValue += ch;
+    }
+    renderProg();
+  }
+
+  function progChooseOperator(opName) {
+    var value = CalculatorProgrammer.fromBase(progValue, progBase);
+    if (isNaN(value)) {
+      setProgError('Invalid input');
+      return;
+    }
+
+    // Chain a pending operator before starting the next one.
+    if (progOperator !== null && !progOverwrite) {
+      progPrevious = CalculatorProgrammer.bitwise[progOperator](progPrevious, value);
+    } else {
+      progPrevious = value;
+    }
+
+    progOperator = opName;
+    progOverwrite = true;
+    progValue = CalculatorProgrammer.toBase(progPrevious, progBase);
+    expressionEl.textContent = progValue + ' ' + OP_LABELS[opName];
+    renderProg();
+  }
+
+  function progEvaluate() {
+    if (progOperator === null || progOverwrite) {
+      return;
+    }
+    var value = CalculatorProgrammer.fromBase(progValue, progBase);
+    if (isNaN(value)) {
+      setProgError('Invalid input');
+      return;
+    }
+
+    var result = CalculatorProgrammer.bitwise[progOperator](progPrevious, value);
+    expressionEl.textContent =
+      CalculatorProgrammer.toBase(progPrevious, progBase) + ' ' + OP_LABELS[progOperator] + ' ' +
+      CalculatorProgrammer.toBase(value, progBase) + ' =';
+
+    progValue = CalculatorProgrammer.toBase(result, progBase);
+    progPrevious = null;
+    progOperator = null;
+    progOverwrite = true;
+    renderProg();
+  }
+
+  // NOT is a unary operator applied immediately to the current value.
+  function progNot() {
+    var value = CalculatorProgrammer.fromBase(progValue, progBase);
+    if (isNaN(value)) {
+      setProgError('Invalid input');
+      return;
+    }
+    expressionEl.textContent = 'NOT ' + CalculatorProgrammer.toBase(value, progBase);
+    progValue = CalculatorProgrammer.toBase(CalculatorProgrammer.bitwise.not(value), progBase);
+    progOverwrite = true;
+    renderProg();
+  }
+
+  function progClear() {
+    progValue = '0';
+    progPrevious = null;
+    progOperator = null;
+    progOverwrite = true;
+    progErrored = false;
+    expressionEl.textContent = '';
+    renderProg();
+  }
+
+  function progDelete() {
+    if (progOverwrite) {
+      return;
+    }
+    if (progValue.length <= 1 || (progValue.length === 2 && progValue.charAt(0) === '-')) {
+      progValue = '0';
+      progOverwrite = true;
+    } else {
+      progValue = progValue.slice(0, -1);
+    }
+    renderProg();
+  }
+
+  // Switch the active base, reinterpreting the current value so its numeric
+  // amount is preserved.
+  function setActiveBase(base) {
+    var value = CalculatorProgrammer.fromBase(progValue, progBase);
+    if (isNaN(value)) {
+      value = 0;
+    }
+    progBase = base;
+    progValue = CalculatorProgrammer.toBase(value, base);
+    updateProgKeys();
+    renderProg();
+    saveProgBase();
+  }
+
+  // Show the value in every base and reflect the active base in the keypad
+  // and the readout panel.
+  function renderProg() {
+    resultEl.textContent = progValue;
+
+    var value = CalculatorProgrammer.fromBase(progValue, progBase);
+    var valid = !isNaN(value);
+    for (var i = 0; i < PROG_BASES.length; i++) {
+      var base = PROG_BASES[i];
+      var cell = progBasesEl.querySelector('[data-base-value="' + base + '"]');
+      cell.textContent = valid ? CalculatorProgrammer.toBase(value, base) : '-';
+    }
+
+    var rows = progBasesEl.querySelectorAll('.prog-base');
+    for (var j = 0; j < rows.length; j++) {
+      rows[j].setAttribute('aria-pressed',
+        parseInt(rows[j].dataset.base, 10) === progBase ? 'true' : 'false');
+    }
+  }
+
+  // Enable only the digit keys that are valid in the active base.
+  function updateProgKeys() {
+    var keys = programmerPanel.querySelectorAll('[data-prog-digit]');
+    for (var i = 0; i < keys.length; i++) {
+      keys[i].disabled = !CalculatorProgrammer.isValidDigit(keys[i].dataset.progDigit, progBase);
+    }
+  }
+
+  function setProgError(message) {
+    progValue = '0';
+    progPrevious = null;
+    progOperator = null;
+    progOverwrite = true;
+    progErrored = true;
+    expressionEl.textContent = '';
+    resultEl.textContent = message;
+    for (var i = 0; i < PROG_BASES.length; i++) {
+      progBasesEl.querySelector('[data-base-value="' + PROG_BASES[i] + '"]').textContent = '-';
+    }
+  }
+
   // --- Memory ------------------------------------------------------
 
   function memoryStore() {
@@ -557,10 +721,12 @@
       panels[j].hidden = panels[j].dataset.modePanel !== mode;
     }
 
-    // The scientific toggles and the wider card layout apply only in
-    // scientific mode.
+    // Per-mode chrome: scientific toggles, the programmer base readout, and
+    // the wider card layout used by both of those modes.
     sciControlsEl.hidden = mode !== 'scientific';
+    progBasesEl.hidden = mode !== 'programmer';
     calculatorEl.classList.toggle('calculator--sci', mode === 'scientific');
+    calculatorEl.classList.toggle('calculator--prog', mode === 'programmer');
 
     // Show the display value that belongs to the mode being entered. Each
     // mode keeps its own working state.
@@ -568,7 +734,8 @@
     if (mode === 'scientific') {
       renderSci();
     } else if (mode === 'programmer') {
-      resultEl.textContent = '0';
+      updateProgKeys();
+      renderProg();
     } else {
       render();
     }
@@ -602,12 +769,17 @@
         angleMode = storedAngle;
       }
       sciNotation = window.localStorage.getItem(STORAGE_SCINOTATION) === 'true';
+      var storedBase = parseInt(window.localStorage.getItem(STORAGE_PROGBASE), 10);
+      if (PROG_BASES.indexOf(storedBase) !== -1) {
+        progBase = storedBase;
+      }
     } catch (error) {
       memory = 0;
       history = [];
       mode = 'standard';
       angleMode = 'DEG';
       sciNotation = false;
+      progBase = 10;
     }
     updateMemoryIndicator();
     renderHistory();
@@ -651,6 +823,14 @@
   function saveSciNotation() {
     try {
       window.localStorage.setItem(STORAGE_SCINOTATION, sciNotation ? 'true' : 'false');
+    } catch (error) {
+      /* Storage unavailable; keep the choice in memory only. */
+    }
+  }
+
+  function saveProgBase() {
+    try {
+      window.localStorage.setItem(STORAGE_PROGBASE, String(progBase));
     } catch (error) {
       /* Storage unavailable; keep the choice in memory only. */
     }
@@ -730,12 +910,49 @@
     });
   }
 
+  // Programmer dispatch: digit keys carry data-prog-digit, operators
+  // data-prog-op, and control keys data-prog-action.
+  var PROG_ACTIONS = {
+    clear: progClear,
+    delete: progDelete,
+    equals: progEvaluate,
+    not: progNot
+  };
+
+  function handleProg(button) {
+    if (progErrored && button.dataset.progAction !== 'clear') {
+      progErrored = false;
+      progValue = '0';
+      progOverwrite = true;
+      expressionEl.textContent = '';
+      renderProg();
+    }
+
+    if (button.dataset.progDigit !== undefined) {
+      progDigit(button.dataset.progDigit);
+    } else if (button.dataset.progOp !== undefined) {
+      progChooseOperator(button.dataset.progOp);
+    } else if (button.dataset.progAction && PROG_ACTIONS[button.dataset.progAction]) {
+      PROG_ACTIONS[button.dataset.progAction]();
+    }
+  }
+
   var standardPanel = document.querySelector('[data-mode-panel="standard"]');
   var scientificPanel = document.querySelector('[data-mode-panel="scientific"]');
+  var programmerPanel = document.querySelector('[data-mode-panel="programmer"]');
 
   delegate(document.querySelector('.memory-bar'), handlePress);
   delegate(standardPanel, handlePress);
   delegate(scientificPanel, handleSci);
+  delegate(programmerPanel, handleProg);
+
+  // Selecting a base row switches the active base.
+  progBasesEl.addEventListener('click', function (event) {
+    var row = event.target.closest('.prog-base');
+    if (row) {
+      setActiveBase(parseInt(row.dataset.base, 10));
+    }
+  });
 
   // Tapping a history entry reuses its result; the clear button empties the
   // list.

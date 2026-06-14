@@ -365,6 +365,93 @@ body {
   outline-offset: 2px;
 }
 
+/* --- Programmer mode ---------------------------------------------- */
+
+/* Like scientific mode, programmer mode uses a wider card and a five-column
+   keypad. */
+.calculator--prog {
+  max-width: 420px;
+}
+
+.keypad--prog {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.keypad--prog .key {
+  font-size: 0.82rem;
+}
+
+/* Disabled keys (hex letters outside hex mode) are dimmed and inert. */
+.key:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.key:disabled:hover {
+  background: var(--key);
+}
+
+/* Four-base readout. Each row shows one base and can be tapped to make that
+   base active. */
+.prog-bases {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--display-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-key);
+  padding: 8px;
+}
+
+.prog-bases[hidden] {
+  display: none;
+}
+
+.prog-base {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.prog-base:hover {
+  background: var(--key);
+}
+
+/* The active base row is marked with a subtle surface and brighter border. */
+.prog-base[aria-pressed="true"] {
+  background: var(--key);
+  border-color: var(--border-bright);
+}
+
+.prog-base:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.prog-base__label {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.prog-base__value {
+  color: var(--text);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow-x: auto;
+  text-align: right;
+}
+
 /* --- History ------------------------------------------------------ */
 
 .history {

@@ -33,6 +33,27 @@
         <button type="button" class="sci-toggle" id="sciNotationToggle" aria-pressed="false" aria-label="Scientific notation">SCI</button>
       </div>
 
+      <!-- Programmer-mode base readout. Shows the current value in all four
+           bases at once; the active base is selectable. -->
+      <div class="prog-bases" id="progBases" hidden>
+        <button type="button" class="prog-base" data-base="16" aria-pressed="false">
+          <span class="prog-base__label">HEX</span>
+          <span class="prog-base__value" data-base-value="16">0</span>
+        </button>
+        <button type="button" class="prog-base" data-base="10" aria-pressed="true">
+          <span class="prog-base__label">DEC</span>
+          <span class="prog-base__value" data-base-value="10">0</span>
+        </button>
+        <button type="button" class="prog-base" data-base="8" aria-pressed="false">
+          <span class="prog-base__label">OCT</span>
+          <span class="prog-base__value" data-base-value="8">0</span>
+        </button>
+        <button type="button" class="prog-base" data-base="2" aria-pressed="false">
+          <span class="prog-base__label">BIN</span>
+          <span class="prog-base__value" data-base-value="2">0</span>
+        </button>
+      </div>
+
       <!-- Memory controls. Wired up in the history and memory phase. -->
       <div class="memory-bar">
         <button type="button" class="key key--memory" data-action="memory-clear" aria-label="Memory clear">MC</button>
@@ -139,9 +160,38 @@
         <button type="button" class="key key--eq key--wide" data-action="equals" aria-label="Equals">=</button>
       </div>
 
-      <!-- Programmer keypad. Built out in a later phase. -->
-      <div class="keypad-panel" data-mode-panel="programmer" hidden>
-        <p class="mode-placeholder">Programmer keypad</p>
+      <!-- Programmer keypad. Hex digit keys enable only for hexadecimal
+           input; operators are bitwise. -->
+      <div class="keypad keypad--prog" data-mode-panel="programmer" hidden>
+        <button type="button" class="key key--digit" data-prog-digit="A" aria-label="Hex A">A</button>
+        <button type="button" class="key key--digit" data-prog-digit="B" aria-label="Hex B">B</button>
+        <button type="button" class="key key--digit" data-prog-digit="C" aria-label="Hex C">C</button>
+        <button type="button" class="key key--fn" data-prog-action="clear" aria-label="All clear">AC</button>
+        <button type="button" class="key key--fn" data-prog-action="delete" aria-label="Delete">&#9003;</button>
+
+        <button type="button" class="key key--digit" data-prog-digit="D" aria-label="Hex D">D</button>
+        <button type="button" class="key key--digit" data-prog-digit="E" aria-label="Hex E">E</button>
+        <button type="button" class="key key--digit" data-prog-digit="F" aria-label="Hex F">F</button>
+        <button type="button" class="key key--op" data-prog-op="and" aria-label="Bitwise and">AND</button>
+        <button type="button" class="key key--op" data-prog-op="or" aria-label="Bitwise or">OR</button>
+
+        <button type="button" class="key key--digit" data-prog-digit="7" aria-label="7">7</button>
+        <button type="button" class="key key--digit" data-prog-digit="8" aria-label="8">8</button>
+        <button type="button" class="key key--digit" data-prog-digit="9" aria-label="9">9</button>
+        <button type="button" class="key key--op" data-prog-op="xor" aria-label="Bitwise xor">XOR</button>
+        <button type="button" class="key key--op" data-prog-action="not" aria-label="Bitwise not">NOT</button>
+
+        <button type="button" class="key key--digit" data-prog-digit="4" aria-label="4">4</button>
+        <button type="button" class="key key--digit" data-prog-digit="5" aria-label="5">5</button>
+        <button type="button" class="key key--digit" data-prog-digit="6" aria-label="6">6</button>
+        <button type="button" class="key key--op" data-prog-op="shl" aria-label="Shift left">&lt;&lt;</button>
+        <button type="button" class="key key--op" data-prog-op="shr" aria-label="Shift right">&gt;&gt;</button>
+
+        <button type="button" class="key key--digit" data-prog-digit="1" aria-label="1">1</button>
+        <button type="button" class="key key--digit" data-prog-digit="2" aria-label="2">2</button>
+        <button type="button" class="key key--digit" data-prog-digit="3" aria-label="3">3</button>
+        <button type="button" class="key key--digit" data-prog-digit="0" aria-label="0">0</button>
+        <button type="button" class="key key--eq" data-prog-action="equals" aria-label="Equals">=</button>
       </div>
 
       </div>
@@ -163,6 +213,7 @@
        scientific-mode expressions and load before the main script. -->
   <script src="js/parser.js"></script>
   <script src="js/scientific.js"></script>
+  <script src="js/programmer.js"></script>
   <script src="js/calculator.js"></script>
 </body>
 </html>
