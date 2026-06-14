@@ -60,6 +60,8 @@ body {
   font-family: var(--font);
   /* Crisp glyphs on the large display digits. */
   -webkit-font-smoothing: antialiased;
+  /* Dark form controls and native scrollbars. */
+  color-scheme: dark;
 }
 
 /* --- Calculator card --------------------------------------------- */
@@ -75,6 +77,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  /* Ease the width change when switching to or from the wider modes so the
+     card does not jump. */
+  transition: max-width 0.2s ease;
 }
 
 /* --- Mode toggle -------------------------------------------------- */
@@ -188,6 +193,21 @@ body {
   white-space: nowrap;
   max-width: 100%;
   overflow-x: auto;
+}
+
+/* Slim, unobtrusive scrollbars on the values that can overflow sideways
+   (long results and wide binary representations). */
+.display__result::-webkit-scrollbar,
+.display__expression::-webkit-scrollbar,
+.prog-base__value::-webkit-scrollbar {
+  height: 4px;
+}
+
+.display__result::-webkit-scrollbar-thumb,
+.display__expression::-webkit-scrollbar-thumb,
+.prog-base__value::-webkit-scrollbar-thumb {
+  background: var(--key-hover);
+  border-radius: 2px;
 }
 
 /* --- Memory bar --------------------------------------------------- */
@@ -551,6 +571,20 @@ body {
 
 /* --- Small screens ------------------------------------------------ */
 
+@media (max-width: 480px) {
+  body {
+    padding: 14px;
+  }
+
+  .keypad--sci .key {
+    font-size: 0.66rem;
+  }
+
+  .keypad--prog .key {
+    font-size: 0.74rem;
+  }
+}
+
 @media (max-width: 380px) {
   .calculator {
     padding: 16px;
@@ -562,5 +596,18 @@ body {
 
   .key {
     font-size: 1.2rem;
+  }
+
+  .keypad--sci .key {
+    font-size: 0.6rem;
+  }
+
+  .keypad--prog .key {
+    font-size: 0.68rem;
+  }
+
+  .keypad--sci .key--op,
+  .keypad--prog .key--op {
+    font-size: 0.95rem;
   }
 }
