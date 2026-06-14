@@ -1,0 +1,25 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# Saved master plan (local only)
+calculator_master_implementation_plan.md
+
+# Internal planning, implementation, and deployment reference docs (never publish)
+calculator_app_implementation_guide_file.md
+COMPLETE GUIDE TO FIX DEPLOYED DIGITAL OCEAN SECURITY ISSUES.txt
+complete guide to get started and configure digital ocean.md
+converting development code to production code.md
+Digital Ocean Deployment Strategy.md
+digital ocean start up guide.md
+GITHUB strategy for portfolio project application to be deployed to digital ocean.md
+HOW TO UPDATE AND REDEPLOY.md
+IMPLEMENTING PROPER COMMENTS FOR CODE BASES.md
+SECURITY CONSIDERATIONS FOR DEPLOYED APPLICATIONS.txt
+
+# Catch-all: ignore every other text reference doc except the published license
+*.txt
+!LICENSE.txt
