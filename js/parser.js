@@ -1,18 +1,42 @@
-// Precedence-aware expression evaluator used by scientific mode. It supports
-// the four basic operators, parentheses, and unary plus/minus with standard
-// precedence: parentheses first, then multiplication and division, then
-// addition and subtraction. A recursive-descent parser keeps the grammar
-// explicit and easy to extend; later phases add named functions and
-// constants to the tokenizer.
+// Precedence-aware expression evaluator used by scientific mode. A
+// recursive-descent parser keeps the grammar explicit. Precedence, from
+// lowest to highest:
 //
-// The single entry point is CalculatorParser.evaluate(expression), which
-// returns a number or throws an Error with a short, user-facing message when
-// the expression is malformed.
+//   expression : + -
+//   term       : * / mod
+//   factor     : unary + -
+//   power      : ^            (right associative)
+//   postfix    : !            (factorial)
+//   primary    : numbers, constants, function calls, parentheses
+//
+// Named functions and constants are supplied by the caller through an
+// environment object, so the parser itself stays free of any particular
+// function library. The single entry point is
+// CalculatorParser.evaluate(expression, environment); it returns a number or
+// throws an Error with a short, user-facing message for malformed input.
 
 (function (global) {
   'use strict';
 
-  // Break the input into number, operator, and parenthesis tokens.
+  // Factorial is evaluated by the parser as the postfix "!" operator.
+  function factorial(n) {
+    if (n < 0 || Math.floor(n) !== n) {
+      throw new Error('Invalid input');
+    }
+    if (n > 170) {
+      // 171! exceeds the largest representable double.
+      throw new Error('Out of range');
+    }
+    var result = 1;
+    for (var i = 2; i <= n; i++) {
+      result *= i;
+    }
+    return result;
+  }
+
+  // Break the input into number, operator, parenthesis, comma, factorial, and
+  // identifier tokens. Identifiers cover function names, constants, and the
+  // word operator "mod".
   function tokenize(input) {
     var tokens = [];
     var i = 0;
@@ -43,7 +67,22 @@
         continue;
       }
 
-      if (ch === '+' || ch === '-' || ch === '*' || ch === '/') {
+      if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+        var name = '';
+        while (i < input.length) {
+          var ic = input.charAt(i);
+          if ((ic >= 'a' && ic <= 'z') || (ic >= 'A' && ic <= 'Z')) {
+            name += ic;
+            i++;
+          } else {
+            break;
+          }
+        }
+        tokens.push({ type: 'ident', value: name });
+        continue;
+      }
+
+      if (ch === '+' || ch === '-' || ch === '*' || ch === '/' || ch === '^') {
         tokens.push({ type: 'op', value: ch });
         i++;
         continue;
@@ -55,13 +94,24 @@
         continue;
       }
 
+      if (ch === ',') {
+        tokens.push({ type: 'comma' });
+        i++;
+        continue;
+      }
+
+      if (ch === '!') {
+        tokens.push({ type: 'fact' });
+        i++;
+        continue;
+      }
+
       throw new Error('Invalid expression');
     }
 
     return tokens;
   }
 
-  // expression := term (('+' | '-') term)*
   function parseExpression(state) {
     var value = parseTerm(state);
     while (peekOp(state, '+') || peekOp(state, '-')) {
@@ -72,45 +122,65 @@
     return value;
   }
 
-  // term := factor (('*' | '/') factor)*
   function parseTerm(state) {
     var value = parseFactor(state);
-    while (peekOp(state, '*') || peekOp(state, '/')) {
-      var op = next(state).value;
-      var right = parseFactor(state);
-      if (op === '/') {
-        if (right === 0) {
+    for (;;) {
+      if (peekOp(state, '*')) {
+        next(state);
+        value = value * parseFactor(state);
+      } else if (peekOp(state, '/')) {
+        next(state);
+        var divisor = parseFactor(state);
+        if (divisor === 0) {
           throw new Error('Cannot divide by zero');
         }
-        value = value / right;
+        value = value / divisor;
+      } else if (peekIdent(state, 'mod')) {
+        next(state);
+        value = value % parseFactor(state);
       } else {
-        value = value * right;
+        break;
       }
     }
     return value;
   }
 
-  // factor := ('+' | '-') factor | '(' expression ')' | number
+  // Unary plus and minus, applied above power so that -2^2 evaluates to -(2^2).
   function parseFactor(state) {
     var token = peek(state);
-    if (!token) {
-      throw new Error('Invalid expression');
-    }
-
-    if (token.type === 'op' && (token.value === '-' || token.value === '+')) {
+    if (token && token.type === 'op' && (token.value === '-' || token.value === '+')) {
       next(state);
       var operand = parseFactor(state);
       return token.value === '-' ? -operand : operand;
     }
+    return parsePower(state);
+  }
 
-    if (token.type === 'paren' && token.value === '(') {
+  // Right-associative exponentiation; the exponent is parsed as a factor so
+  // that 2^-3 and 2^3^2 behave as expected.
+  function parsePower(state) {
+    var base = parsePostfix(state);
+    if (peekOp(state, '^')) {
       next(state);
-      var inner = parseExpression(state);
-      var closing = next(state);
-      if (!closing || closing.type !== 'paren' || closing.value !== ')') {
-        throw new Error('Unbalanced parentheses');
-      }
-      return inner;
+      var exponent = parseFactor(state);
+      return Math.pow(base, exponent);
+    }
+    return base;
+  }
+
+  function parsePostfix(state) {
+    var value = parsePrimary(state);
+    while (peek(state) && peek(state).type === 'fact') {
+      next(state);
+      value = factorial(value);
+    }
+    return value;
+  }
+
+  function parsePrimary(state) {
+    var token = peek(state);
+    if (!token) {
+      throw new Error('Invalid expression');
     }
 
     if (token.type === 'number') {
@@ -118,7 +188,49 @@
       return token.value;
     }
 
+    if (token.type === 'paren' && token.value === '(') {
+      next(state);
+      var inner = parseExpression(state);
+      expectClose(state);
+      return inner;
+    }
+
+    if (token.type === 'ident') {
+      next(state);
+      var name = token.value;
+
+      // A following "(" marks a function call with one or more arguments.
+      if (peek(state) && peek(state).type === 'paren' && peek(state).value === '(') {
+        next(state);
+        var args = [parseExpression(state)];
+        while (peek(state) && peek(state).type === 'comma') {
+          next(state);
+          args.push(parseExpression(state));
+        }
+        expectClose(state);
+
+        var fn = state.env.functions[name];
+        if (typeof fn !== 'function') {
+          throw new Error('Invalid expression');
+        }
+        return fn.apply(null, args);
+      }
+
+      // Otherwise the identifier must name a constant.
+      if (Object.prototype.hasOwnProperty.call(state.env.constants, name)) {
+        return state.env.constants[name];
+      }
+      throw new Error('Invalid expression');
+    }
+
     throw new Error('Invalid expression');
+  }
+
+  function expectClose(state) {
+    var token = next(state);
+    if (!token || token.type !== 'paren' || token.value !== ')') {
+      throw new Error('Unbalanced parentheses');
+    }
   }
 
   function peek(state) {
@@ -134,24 +246,32 @@
     return token !== null && token.type === 'op' && token.value === value;
   }
 
-  function evaluate(expression) {
-    // Normalise the display glyphs for multiply, divide, and minus to their
-    // ASCII equivalents before tokenising.
+  function peekIdent(state, value) {
+    var token = peek(state);
+    return token !== null && token.type === 'ident' && token.value === value;
+  }
+
+  function evaluate(expression, environment) {
+    var env = environment || { constants: {}, functions: {} };
+
+    // Normalise display glyphs to the ASCII the tokenizer expects.
     var normalized = String(expression)
       .replace(/×/g, '*')
       .replace(/÷/g, '/')
-      .replace(/−/g, '-');
+      .replace(/−/g, '-')
+      .replace(/π/g, 'pi')
+      .replace(/√/g, 'sqrt')
+      .replace(/∛/g, 'cbrt');
 
     var tokens = tokenize(normalized);
     if (tokens.length === 0) {
       throw new Error('Invalid expression');
     }
 
-    var state = { tokens: tokens, pos: 0 };
+    var state = { tokens: tokens, pos: 0, env: env };
     var result = parseExpression(state);
 
-    // Any leftover tokens mean the expression was not fully consumed, for
-    // example a missing operator or an unbalanced opening parenthesis.
+    // Leftover tokens mean the expression was not fully consumed.
     if (state.pos !== tokens.length) {
       throw new Error('Invalid expression');
     }

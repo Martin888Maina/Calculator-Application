@@ -26,11 +26,17 @@
   var clearHistoryEl = document.getElementById('clearHistory');
 
   var modeToggleEl = document.querySelector('.mode-toggle');
+  var calculatorEl = document.querySelector('.calculator');
+  var sciControlsEl = document.getElementById('sciControls');
+  var angleToggleEl = document.getElementById('angleToggle');
+  var sciNotationToggleEl = document.getElementById('sciNotationToggle');
 
   // localStorage keys for the values that persist across sessions.
   var STORAGE_MEMORY = 'calculator.memory';
   var STORAGE_HISTORY = 'calculator.history';
   var STORAGE_MODE = 'calculator.mode';
+  var STORAGE_ANGLE = 'calculator.angle';
+  var STORAGE_SCINOTATION = 'calculator.sciNotation';
   var HISTORY_LIMIT = 50;
   var MODES = ['standard', 'scientific', 'programmer'];
 
@@ -66,6 +72,11 @@
   var ans = 0;
   var sciDone = false;
   var sciErrored = false;
+
+  // angleMode:   "DEG" or "RAD"; affects the trigonometric functions.
+  // sciNotation: when true, results display in exponential form.
+  var angleMode = 'DEG';
+  var sciNotation = false;
 
   // --- Entry -------------------------------------------------------
 
@@ -285,16 +296,19 @@
     resultEl.textContent = sciInput === '' ? '0' : sciInput;
   }
 
-  function isOperatorGlyph(text) {
-    return text === '+' || text === '−' || text === '×' || text === '÷';
+  // Keys that operate on the value to their left, so that pressing them just
+  // after a result continues from that result rather than starting over.
+  function continuesFromResult(text) {
+    return text === '+' || text === '−' || text === '×' || text === '÷' ||
+      text === '^' || text === '^3' || text === 'mod' || text === '!';
   }
 
-  // Append a literal (digit, operator, parenthesis, or decimal point) to the
-  // scientific expression. After a result, an operator continues from that
-  // result while anything else begins a new expression.
+  // Append a literal (digit, operator, function, parenthesis, or decimal
+  // point) to the scientific expression. After a result, an operator-style key
+  // continues from that result while anything else begins a new expression.
   function sciAppend(text) {
     if (sciDone) {
-      if (isOperatorGlyph(text)) {
+      if (continuesFromResult(text)) {
         sciInput = formatNumber(ans);
       } else {
         sciInput = '';
@@ -343,7 +357,8 @@
 
     var result;
     try {
-      result = CalculatorParser.evaluate(sciInput);
+      var env = CalculatorScientific.getEnvironment(angleMode);
+      result = CalculatorParser.evaluate(sciInput, env);
     } catch (error) {
       setSciError(error.message);
       return;
@@ -356,7 +371,7 @@
     ans = result;
     sciInput = resultStr;
     sciDone = true;
-    resultEl.textContent = formatDisplay(resultStr);
+    resultEl.textContent = formatSci(result);
   }
 
   function setSciError(message) {
@@ -365,6 +380,41 @@
     sciErrored = true;
     expressionEl.textContent = '';
     resultEl.textContent = message;
+  }
+
+  // Format a result for the scientific display, honouring the notation
+  // toggle. Off uses the grouped decimal form; on uses exponential form.
+  function formatSci(value) {
+    if (!isFinite(value)) {
+      return String(value);
+    }
+    return sciNotation ? value.toExponential() : formatDisplay(formatNumber(value));
+  }
+
+  // --- Scientific toggles ------------------------------------------
+
+  function toggleAngleMode() {
+    angleMode = angleMode === 'DEG' ? 'RAD' : 'DEG';
+    updateAngleUI();
+    saveAngle();
+  }
+
+  function updateAngleUI() {
+    angleToggleEl.textContent = angleMode;
+  }
+
+  function toggleSciNotation() {
+    sciNotation = !sciNotation;
+    updateSciNotationUI();
+    saveSciNotation();
+    // Reformat the currently shown result so the change is visible at once.
+    if (mode === 'scientific' && sciDone) {
+      resultEl.textContent = formatSci(ans);
+    }
+  }
+
+  function updateSciNotationUI() {
+    sciNotationToggleEl.setAttribute('aria-pressed', sciNotation ? 'true' : 'false');
   }
 
   // --- Memory ------------------------------------------------------
@@ -507,6 +557,11 @@
       panels[j].hidden = panels[j].dataset.modePanel !== mode;
     }
 
+    // The scientific toggles and the wider card layout apply only in
+    // scientific mode.
+    sciControlsEl.hidden = mode !== 'scientific';
+    calculatorEl.classList.toggle('calculator--sci', mode === 'scientific');
+
     // Show the display value that belongs to the mode being entered. Each
     // mode keeps its own working state.
     expressionEl.textContent = '';
@@ -542,13 +597,22 @@
       if (MODES.indexOf(storedMode) !== -1) {
         mode = storedMode;
       }
+      var storedAngle = window.localStorage.getItem(STORAGE_ANGLE);
+      if (storedAngle === 'DEG' || storedAngle === 'RAD') {
+        angleMode = storedAngle;
+      }
+      sciNotation = window.localStorage.getItem(STORAGE_SCINOTATION) === 'true';
     } catch (error) {
       memory = 0;
       history = [];
       mode = 'standard';
+      angleMode = 'DEG';
+      sciNotation = false;
     }
     updateMemoryIndicator();
     renderHistory();
+    updateAngleUI();
+    updateSciNotationUI();
     setMode(mode);
   }
 
@@ -571,6 +635,22 @@
   function saveMode() {
     try {
       window.localStorage.setItem(STORAGE_MODE, mode);
+    } catch (error) {
+      /* Storage unavailable; keep the choice in memory only. */
+    }
+  }
+
+  function saveAngle() {
+    try {
+      window.localStorage.setItem(STORAGE_ANGLE, angleMode);
+    } catch (error) {
+      /* Storage unavailable; keep the choice in memory only. */
+    }
+  }
+
+  function saveSciNotation() {
+    try {
+      window.localStorage.setItem(STORAGE_SCINOTATION, sciNotation ? 'true' : 'false');
     } catch (error) {
       /* Storage unavailable; keep the choice in memory only. */
     }
@@ -676,6 +756,10 @@
     }
   });
 
+  // Scientific toggles.
+  angleToggleEl.addEventListener('click', toggleAngleMode);
+  sciNotationToggleEl.addEventListener('click', toggleSciNotation);
+
   // --- Keyboard ----------------------------------------------------
 
   // Map a keyboard event to the standard on-screen button it should activate.
@@ -715,6 +799,9 @@
       case '/': return scientificPanel.querySelector('[data-input="÷"]');
       case '(': return scientificPanel.querySelector('[data-input="("]');
       case ')': return scientificPanel.querySelector('[data-input=")"]');
+      case '^': return scientificPanel.querySelector('[data-input="^"]');
+      case '!': return scientificPanel.querySelector('[data-input="!"]');
+      case ',': return scientificPanel.querySelector('[data-input=","]');
       case '=':
       case 'Enter': return scientificPanel.querySelector('[data-action="equals"]');
       case 'Backspace': return scientificPanel.querySelector('[data-action="delete"]');

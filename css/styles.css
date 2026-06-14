@@ -305,6 +305,66 @@ body {
   padding: 16px 0;
 }
 
+/* --- Scientific mode ---------------------------------------------- */
+
+/* Scientific mode needs more keys, so the card widens and the keypad uses a
+   five-column grid with smaller glyphs. */
+.calculator--sci {
+  max-width: 420px;
+}
+
+.keypad--sci {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.keypad--sci .key {
+  font-size: 0.74rem;
+}
+
+.keypad--sci .key--op {
+  font-size: 1.1rem;
+}
+
+/* Angle and notation toggles: small, quiet, monochrome controls. */
+.sci-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.sci-controls[hidden] {
+  display: none;
+}
+
+.sci-toggle {
+  font-family: inherit;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+
+.sci-toggle:hover {
+  color: var(--text);
+}
+
+/* The notation toggle lights up when active. */
+.sci-toggle[aria-pressed="true"] {
+  color: var(--text);
+  background: var(--key);
+  border-color: var(--border-bright);
+}
+
+.sci-toggle:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
 /* --- History ------------------------------------------------------ */
 
 .history {
