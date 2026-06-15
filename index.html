@@ -55,7 +55,7 @@
         </button>
       </div>
 
-      <!-- Memory controls. Wired up in the history and memory phase. -->
+      <!-- Memory controls (MC, MR, M+, M-, MS). -->
       <div class="memory-bar">
         <button type="button" class="key key--memory" data-action="memory-clear" aria-label="Memory clear">MC</button>
         <button type="button" class="key key--memory" data-action="memory-recall" aria-label="Memory recall">MR</button>
@@ -101,64 +101,73 @@
         <button type="button" class="key key--eq" data-action="equals" aria-label="Equals">=</button>
       </div>
 
-      <!-- Scientific keypad. Builds a full expression evaluated with operator
-           precedence, parentheses, functions, and constants. -->
-      <div class="keypad keypad--sci" data-mode-panel="scientific" hidden>
-        <button type="button" class="key key--fn" data-input="sin(" aria-label="Sine">sin</button>
-        <button type="button" class="key key--fn" data-input="cos(" aria-label="Cosine">cos</button>
-        <button type="button" class="key key--fn" data-input="tan(" aria-label="Tangent">tan</button>
-        <button type="button" class="key key--fn" data-input="&#960;" aria-label="Pi">&#960;</button>
-        <button type="button" class="key key--fn" data-input="e" aria-label="Euler's number">e</button>
+      <!-- Scientific keypad. Two side-by-side blocks (functions on the left,
+           number pad on the right) keep the layout wide rather than tall. -->
+      <div class="keypad--sci" data-mode-panel="scientific" hidden>
 
-        <button type="button" class="key key--fn" data-input="asin(" aria-label="Inverse sine">asin</button>
-        <button type="button" class="key key--fn" data-input="acos(" aria-label="Inverse cosine">acos</button>
-        <button type="button" class="key key--fn" data-input="atan(" aria-label="Inverse tangent">atan</button>
-        <button type="button" class="key key--fn" data-input="(" aria-label="Open parenthesis">(</button>
-        <button type="button" class="key key--fn" data-input=")" aria-label="Close parenthesis">)</button>
+        <!-- Function and constant keys -->
+        <div class="sci-funcs">
+          <button type="button" class="key key--fn" data-input="sin(" aria-label="Sine">sin</button>
+          <button type="button" class="key key--fn" data-input="cos(" aria-label="Cosine">cos</button>
+          <button type="button" class="key key--fn" data-input="tan(" aria-label="Tangent">tan</button>
+          <button type="button" class="key key--fn" data-input="&#960;" aria-label="Pi">&#960;</button>
 
-        <button type="button" class="key key--fn" data-input="sinh(" aria-label="Hyperbolic sine">sinh</button>
-        <button type="button" class="key key--fn" data-input="cosh(" aria-label="Hyperbolic cosine">cosh</button>
-        <button type="button" class="key key--fn" data-input="tanh(" aria-label="Hyperbolic tangent">tanh</button>
-        <button type="button" class="key key--fn" data-action="clear" aria-label="All clear">AC</button>
-        <button type="button" class="key key--fn" data-action="delete" aria-label="Delete">&#9003;</button>
+          <button type="button" class="key key--fn" data-input="asin(" aria-label="Inverse sine">asin</button>
+          <button type="button" class="key key--fn" data-input="acos(" aria-label="Inverse cosine">acos</button>
+          <button type="button" class="key key--fn" data-input="atan(" aria-label="Inverse tangent">atan</button>
+          <button type="button" class="key key--fn" data-input="e" aria-label="Euler's number">e</button>
 
-        <button type="button" class="key key--fn" data-input="log(" aria-label="Base ten logarithm">log</button>
-        <button type="button" class="key key--fn" data-input="ln(" aria-label="Natural logarithm">ln</button>
-        <button type="button" class="key key--fn" data-input="logb(" aria-label="Logarithm of arbitrary base">logb</button>
-        <button type="button" class="key key--fn" data-input="^" aria-label="Power">x^y</button>
-        <button type="button" class="key key--fn" data-input="^3" aria-label="Cube">x&#179;</button>
+          <button type="button" class="key key--fn" data-input="sinh(" aria-label="Hyperbolic sine">sinh</button>
+          <button type="button" class="key key--fn" data-input="cosh(" aria-label="Hyperbolic cosine">cosh</button>
+          <button type="button" class="key key--fn" data-input="tanh(" aria-label="Hyperbolic tangent">tanh</button>
+          <button type="button" class="key key--fn" data-input="mod" aria-label="Modulo">mod</button>
 
-        <button type="button" class="key key--fn" data-input="&#8730;(" aria-label="Square root">&#8730;</button>
-        <button type="button" class="key key--fn" data-input="&#8731;(" aria-label="Cube root">&#8731;</button>
-        <button type="button" class="key key--fn" data-input="nthroot(" aria-label="Nth root">y&#8730;x</button>
-        <button type="button" class="key key--fn" data-input="abs(" aria-label="Absolute value">|x|</button>
-        <button type="button" class="key key--fn" data-input="!" aria-label="Factorial">n!</button>
+          <button type="button" class="key key--fn" data-input="log(" aria-label="Base ten logarithm">log</button>
+          <button type="button" class="key key--fn" data-input="ln(" aria-label="Natural logarithm">ln</button>
+          <button type="button" class="key key--fn" data-input="logb(" aria-label="Logarithm of arbitrary base">logb</button>
+          <button type="button" class="key key--fn" data-input="abs(" aria-label="Absolute value">|x|</button>
 
-        <button type="button" class="key key--digit" data-input="7" aria-label="7">7</button>
-        <button type="button" class="key key--digit" data-input="8" aria-label="8">8</button>
-        <button type="button" class="key key--digit" data-input="9" aria-label="9">9</button>
-        <button type="button" class="key key--fn" data-input="mod" aria-label="Modulo">mod</button>
-        <button type="button" class="key key--op" data-input="&#247;" aria-label="Divide">&#247;</button>
+          <button type="button" class="key key--fn" data-input="&#8730;(" aria-label="Square root">&#8730;</button>
+          <button type="button" class="key key--fn" data-input="&#8731;(" aria-label="Cube root">&#8731;</button>
+          <button type="button" class="key key--fn" data-input="nthroot(" aria-label="Nth root">y&#8730;x</button>
+          <button type="button" class="key key--fn" data-input="!" aria-label="Factorial">n!</button>
 
-        <button type="button" class="key key--digit" data-input="4" aria-label="4">4</button>
-        <button type="button" class="key key--digit" data-input="5" aria-label="5">5</button>
-        <button type="button" class="key key--digit" data-input="6" aria-label="6">6</button>
-        <button type="button" class="key key--fn" data-input="e^(" aria-label="e to the power x">e^x</button>
-        <button type="button" class="key key--op" data-input="&#215;" aria-label="Multiply">&#215;</button>
+          <button type="button" class="key key--fn" data-input="^" aria-label="Power">x^y</button>
+          <button type="button" class="key key--fn" data-input="^3" aria-label="Cube">x&#179;</button>
+          <button type="button" class="key key--fn" data-input="e^(" aria-label="e to the power x">e^x</button>
+          <button type="button" class="key key--fn" data-input="10^(" aria-label="10 to the power x">10^x</button>
+        </div>
 
-        <button type="button" class="key key--digit" data-input="1" aria-label="1">1</button>
-        <button type="button" class="key key--digit" data-input="2" aria-label="2">2</button>
-        <button type="button" class="key key--digit" data-input="3" aria-label="3">3</button>
-        <button type="button" class="key key--fn" data-input="10^(" aria-label="10 to the power x">10^x</button>
-        <button type="button" class="key key--op" data-input="&#8722;" aria-label="Subtract">&#8722;</button>
+        <!-- Number pad, operators, parentheses, and equals -->
+        <div class="sci-pad">
+          <button type="button" class="key key--fn" data-input="(" aria-label="Open parenthesis">(</button>
+          <button type="button" class="key key--fn" data-input=")" aria-label="Close parenthesis">)</button>
+          <button type="button" class="key key--fn" data-action="clear" aria-label="All clear">AC</button>
+          <button type="button" class="key key--fn" data-action="delete" aria-label="Delete">&#9003;</button>
 
-        <button type="button" class="key key--fn" data-action="ans" aria-label="Last answer">ANS</button>
-        <button type="button" class="key key--digit" data-input="0" aria-label="0">0</button>
-        <button type="button" class="key key--digit" data-input="." aria-label="Decimal point">.</button>
-        <button type="button" class="key key--fn" data-input="," aria-label="Comma">,</button>
-        <button type="button" class="key key--op" data-input="+" aria-label="Add">+</button>
+          <button type="button" class="key key--digit" data-input="7" aria-label="7">7</button>
+          <button type="button" class="key key--digit" data-input="8" aria-label="8">8</button>
+          <button type="button" class="key key--digit" data-input="9" aria-label="9">9</button>
+          <button type="button" class="key key--op" data-input="&#247;" aria-label="Divide">&#247;</button>
 
-        <button type="button" class="key key--eq key--wide" data-action="equals" aria-label="Equals">=</button>
+          <button type="button" class="key key--digit" data-input="4" aria-label="4">4</button>
+          <button type="button" class="key key--digit" data-input="5" aria-label="5">5</button>
+          <button type="button" class="key key--digit" data-input="6" aria-label="6">6</button>
+          <button type="button" class="key key--op" data-input="&#215;" aria-label="Multiply">&#215;</button>
+
+          <button type="button" class="key key--digit" data-input="1" aria-label="1">1</button>
+          <button type="button" class="key key--digit" data-input="2" aria-label="2">2</button>
+          <button type="button" class="key key--digit" data-input="3" aria-label="3">3</button>
+          <button type="button" class="key key--op" data-input="&#8722;" aria-label="Subtract">&#8722;</button>
+
+          <button type="button" class="key key--digit" data-input="0" aria-label="0">0</button>
+          <button type="button" class="key key--digit" data-input="." aria-label="Decimal point">.</button>
+          <button type="button" class="key key--fn" data-input="," aria-label="Comma">,</button>
+          <button type="button" class="key key--op" data-input="+" aria-label="Add">+</button>
+
+          <button type="button" class="key key--fn" data-action="ans" aria-label="Last answer">ANS</button>
+          <button type="button" class="key key--eq key--eq-sci" data-action="equals" aria-label="Equals">=</button>
+        </div>
       </div>
 
       <!-- Programmer keypad. Hex digit keys enable only for hexadecimal

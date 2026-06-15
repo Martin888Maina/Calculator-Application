@@ -3,7 +3,7 @@
 // reciprocal), sign toggle, percentage, clearing, and backspace. Operators
 // use immediate execution: each new operator applies to the running result,
 // which is how a basic desktop calculator behaves (precedence-aware
-// evaluation arrives with scientific mode in a later phase).
+// evaluation is handled separately by scientific mode).
 
 (function () {
   'use strict';
@@ -703,8 +703,7 @@
   // --- Mode switching ----------------------------------------------
 
   // Show the panel for the chosen mode, mark its toggle button active, and
-  // remember the choice. Standard mode keeps the existing keypad and logic;
-  // the other panels are filled in by later phases.
+  // remember the choice. Each mode keeps its own working state and dispatch.
   function setMode(nextMode) {
     if (MODES.indexOf(nextMode) === -1) {
       nextMode = 'standard';
@@ -1042,7 +1041,8 @@
       return;
     }
 
-    // Programmer mode has its own input rules, handled in a later phase.
+    // Programmer mode is driven by its on-screen, base-aware keys and does
+    // not take physical keyboard input here.
     if (mode === 'programmer') {
       return;
     }

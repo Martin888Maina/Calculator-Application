@@ -1,13 +1,14 @@
-/* ===================================================================
-   Calculator theme
-   A monochrome, black-and-white design. Colours, sizing, and spacing
-   are centralised as custom properties so the whole look can be tuned
-   from one place.
-   =================================================================== */
+/*
+   Calculator theme.
+   A monochrome design built around a black card on a white page. Colours,
+   sizing, and spacing are centralised as custom properties so the whole look
+   can be tuned from one place.
+*/
 
 :root {
-  /* Surfaces, layered from the page background up to the keys. */
-  --bg: #000000;
+  /* The page area around the calculator is white; the calculator card and
+     its inner surfaces stay black. */
+  --bg: #ffffff;
   --surface: #0a0a0a;
   --display-bg: #050505;
 
@@ -32,7 +33,7 @@
 
   --radius-card: 24px;
   --radius-key: 16px;
-  --gap: 10px;
+  --gap: 12px;
 
   --font: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
@@ -56,29 +57,41 @@ body {
   justify-content: center;
   padding: 24px;
   background: var(--bg);
-  color: var(--text);
+  color: var(--text-invert);
   font-family: var(--font);
   /* Crisp glyphs on the large display digits. */
   -webkit-font-smoothing: antialiased;
-  /* Dark form controls and native scrollbars. */
-  color-scheme: dark;
+}
+
+/* The main wrapper must span the full width so the card's width: 100% has a
+   concrete width to resolve against; otherwise the card collapses to its
+   content width and max-width never engages. */
+main {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 /* --- Calculator card --------------------------------------------- */
 
 .calculator {
   width: 100%;
-  max-width: 460px;
+  max-width: 960px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow);
-  padding: 20px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  /* Ease the width change when switching to or from the wider modes so the
-     card does not jump. */
+  /* The card and everything inside it is dark, so dark-theme native controls
+     (scrollbars in the history list and overflow areas) belong here, not on
+     the now-white page. */
+  color: var(--text);
+  color-scheme: dark;
+  /* Animate the card width so any change resizes smoothly rather than
+     snapping. */
   transition: max-width 0.2s ease;
 }
 
@@ -99,10 +112,10 @@ body {
   color: var(--muted);
   background: transparent;
   border: none;
-  border-radius: 8px;
-  padding: 9px 6px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  border-radius: 10px;
+  padding: 15px 10px;
+  font-size: 1.05rem;
+  font-weight: 600;
   cursor: pointer;
   transition: background-color 0.12s ease, color 0.12s ease;
 }
@@ -131,13 +144,6 @@ body {
   display: none;
 }
 
-.mode-placeholder {
-  color: var(--muted);
-  text-align: center;
-  padding: 48px 12px;
-  font-size: 0.9rem;
-}
-
 /* --- Display ------------------------------------------------------ */
 
 .display {
@@ -145,13 +151,13 @@ body {
   background: var(--display-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-key);
-  padding: 18px 20px;
-  min-height: 110px;
+  padding: 24px 26px;
+  min-height: 150px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   align-items: flex-end;
-  gap: 6px;
+  gap: 8px;
   /* Long results scroll sideways rather than breaking the layout. */
   overflow: hidden;
 }
@@ -176,7 +182,7 @@ body {
 
 .display__expression {
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   min-height: 1.2em;
   letter-spacing: 0.01em;
   white-space: nowrap;
@@ -186,7 +192,7 @@ body {
 
 .display__result {
   color: var(--text);
-  font-size: clamp(2.2rem, 9vw, 3rem);
+  font-size: clamp(2.8rem, 10vw, 4rem);
   font-weight: 300;
   line-height: 1.1;
   letter-spacing: -0.01em;
@@ -236,13 +242,14 @@ body {
   border-radius: var(--radius-key);
   cursor: pointer;
   user-select: none;
-  /* Keys are wider than they are tall so the keypad reads as a balanced,
-     wide block rather than a tall narrow column. */
-  aspect-ratio: 3 / 2;
+  /* A fixed, comfortable key height keeps every button a proper rounded
+     rectangle at any card width. A width-based ratio would make keys too
+     short (pill-shaped) on narrow screens and oversized on wide ones. */
+  height: 76px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.35rem;
+  font-size: 1.7rem;
   font-weight: 400;
   transition: background-color 0.12s ease, transform 0.06s ease,
     filter 0.12s ease;
@@ -270,8 +277,8 @@ body {
 
 /* Memory keys are compact, secondary controls. */
 .key--memory {
-  aspect-ratio: auto;
-  padding: 10px 0;
+  height: auto;
+  padding: 12px 0;
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--muted);
@@ -286,7 +293,7 @@ body {
 
 /* Function keys (clear, sign, percent, root, square, reciprocal). */
 .key--fn {
-  font-size: 1.15rem;
+  font-size: 1.25rem;
   color: var(--text);
 }
 
@@ -319,31 +326,42 @@ body {
   aspect-ratio: auto;
 }
 
-/* Full-width key, used by the scientific equals button. */
-.key--wide {
-  grid-column: 1 / -1;
-  aspect-ratio: auto;
-  padding: 16px 0;
-}
-
 /* --- Scientific mode ---------------------------------------------- */
 
-/* Scientific mode needs more keys, so the card widens and the keypad uses a
-   five-column grid with smaller glyphs. */
+/* Scientific mode shares the same wide card as the other modes; its distinct
+   two-block keypad layout is defined below. */
 .calculator--sci {
-  max-width: 560px;
+  max-width: 960px;
 }
 
+/* Scientific mode lays its keys out as two side-by-side blocks: a function
+   grid on the left and a number pad on the right. This keeps the keypad wide
+   and roughly six rows tall instead of one very long column. */
 .keypad--sci {
-  grid-template-columns: repeat(5, 1fr);
+  display: flex;
+  gap: var(--gap);
+  align-items: start;
+}
+
+.sci-funcs,
+.sci-pad {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--gap);
 }
 
 .keypad--sci .key {
-  font-size: 0.9rem;
+  font-size: 1.2rem;
 }
 
 .keypad--sci .key--op {
-  font-size: 1.3rem;
+  font-size: 1.55rem;
+}
+
+/* Equals fills the remainder of its row, next to the ANS key. */
+.sci-pad .key--eq-sci {
+  grid-column: span 3;
 }
 
 /* Angle and notation toggles: small, quiet, monochrome controls. */
@@ -388,10 +406,9 @@ body {
 
 /* --- Programmer mode ---------------------------------------------- */
 
-/* Like scientific mode, programmer mode uses a wider card and a five-column
-   keypad. */
+/* Programmer mode shares the same wide card; its keypad uses five columns. */
 .calculator--prog {
-  max-width: 560px;
+  max-width: 960px;
 }
 
 .keypad--prog {
@@ -399,7 +416,7 @@ body {
 }
 
 .keypad--prog .key {
-  font-size: 0.98rem;
+  font-size: 1.3rem;
 }
 
 /* Disabled keys (hex letters outside hex mode) are dimmed and inert. */
@@ -572,17 +589,31 @@ body {
 
 /* --- Small screens ------------------------------------------------ */
 
+/* The two scientific blocks sit side by side on large screens, but that is
+   too cramped on a phone. Below this width they stack so each block spans the
+   full width. */
+@media (max-width: 600px) {
+  .keypad--sci {
+    flex-direction: column;
+  }
+}
+
 @media (max-width: 480px) {
   body {
     padding: 14px;
   }
 
-  .keypad--sci .key {
-    font-size: 0.66rem;
+  .key {
+    height: 54px;
+    font-size: 1.4rem;
+  }
+
+  .key--fn {
+    font-size: 1.05rem;
   }
 
   .keypad--prog .key {
-    font-size: 0.74rem;
+    font-size: 1rem;
   }
 }
 
@@ -596,18 +627,14 @@ body {
   }
 
   .key {
-    font-size: 1.2rem;
-  }
-
-  .keypad--sci .key {
-    font-size: 0.6rem;
+    height: 50px;
+    font-size: 1.25rem;
   }
 
   .keypad--prog .key {
-    font-size: 0.68rem;
+    font-size: 0.9rem;
   }
 
-  .keypad--sci .key--op,
   .keypad--prog .key--op {
     font-size: 0.95rem;
   }
